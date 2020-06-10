@@ -1,4 +1,4 @@
-# symptom-to-disease-prediction
+# Dog Disease Prediction
 A simple symptom to disease prediction with Machine Learning.
 
 # How to run
