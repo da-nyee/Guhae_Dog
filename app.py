@@ -34,38 +34,45 @@ symptoms_dict = {
 symp = []
 _symp = []
 
-@app.route("/reset", methods=['get'])
+@app.route("/reset", methods=['post'])
 def reset():
-    df = pd.read_csv('data/clean/dog_disease_train.csv', encoding='cp949')
-    
-    df["테스트"] = 0
-    
+    len_symptoms_dict = len(symptoms_dict)
+    symptoms_dict[request.form["add"]] = len_symptoms_dict
+
+    df = pd.read_csv('./data/clean/dog_disease_train.csv', encoding='cp949')
+    df[request.form["add"]] = 0
     cols = df.columns.to_list()
     tmp = cols[-1]
-    print("tmp 무슨 값?", tmp)
-    
     del cols[-1]
     cols.insert(-1, tmp)
-
     df = df[cols]
+    df.to_csv("./data/clean/dog_disease_train.csv", mode ='w', index=None, encoding='cp949')
 
-    df.to_csv("data/clean/dog_disease_train.csv", mode ='w', index=None, encoding='cp949')
+    df_test = pd.read_csv('./data/clean/dog_disease_test.csv', encoding='cp949')
+    df_test[request.form["add"]] = 0
+    cols_test = df_test.columns.to_list()
+    tmp_test = cols_test[-1]
+    del cols_test[-1]
+    cols_test.insert(-1, tmp_test)
+    df_test = df_test[cols_test]
+    df.to_csv("./data/clean/dog_disease_test.csv", mode ='w', index=None, encoding='cp949')
 
-    # X = df.iloc[:, :-1]
-    # y = df['질병명']
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=20)
-    # rf_clf = RandomForestClassifier()
-    #
-    # rf_clf.fit(X_train, y_train)
-    #
-    # with open("model7-test.pkl",'wb') as fid:
-    #     pickle.dump(rf_clf, fid)
-    #
-    # print(rf_clf)
-    # print("Accuracy on split test: ", rf_clf.score(X_test,y_test))
-    #
-    # print("과연")
-    #
+    X = df.iloc[:, :-1]
+    y = df['질병명']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = float(request.form["test_size"]), random_state = int(request.form["random_state"]))
+    rf_clf = RandomForestClassifier()
+
+    rf_clf.fit(X_train, y_train)
+
+    with open("dog_disease_model2.pkl", 'wb') as fid:
+        pickle.dump(rf_clf, fid)
+
+    # 테스트데이터
+    X_acutal_test = df_test.iloc[:, :-1]
+    y_actual_test = df_test['질병명']
+
+    print("Accuracy on acutal test: ", rf_clf.score(X_acutal_test, y_actual_test))
+
     return "증상 추가 완료!"
 
 @app.route("/test", methods=['post'])
