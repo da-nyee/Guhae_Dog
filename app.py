@@ -55,7 +55,7 @@ def reset():
     del cols_test[-1]
     cols_test.insert(-1, tmp_test)
     df_test = df_test[cols_test]
-    df.to_csv("./data/clean/dog_disease_test.csv", mode ='w', index=None, encoding='cp949')
+    df_test.to_csv("./data/clean/dog_disease_test.csv", mode ='w', index=None, encoding='cp949')
 
     X = df.iloc[:, :-1]
     y = df['질병명']
@@ -64,7 +64,7 @@ def reset():
 
     rf_clf.fit(X_train, y_train)
 
-    with open("dog_disease_model2.pkl", 'wb') as fid:
+    with open("dog_disease_model.pkl", 'wb') as fid:
         pickle.dump(rf_clf, fid)
 
     # 테스트데이터
