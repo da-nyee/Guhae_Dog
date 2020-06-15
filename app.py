@@ -64,7 +64,7 @@ def reset():
 
     rf_clf.fit(X_train, y_train)
 
-    with open("dog_disease_model.pkl", 'wb') as fid:
+    with open("dog_disease_model1.pkl", 'wb') as fid:
         pickle.dump(rf_clf, fid)
 
     # 테스트데이터
