@@ -1,6 +1,5 @@
 //package com.example.demo.APITest;
 //
-//
 //import com.example.demo.member.dao.MemberRepository;
 //import com.example.demo.member.dao.MemberSaveRequestDto;
 //import com.example.demo.member.service.MemberService;
@@ -28,6 +27,7 @@
 //@RunWith(SpringRunner.class)
 //@SpringBootTest
 //@Transactional
+
 //public class MemberServiceApiTest {
 //
 //

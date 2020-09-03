@@ -1,10 +1,14 @@
 HELP.md
 .gradle
-application-oauth.properties
 build/
+log/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**
-!**/src/test/**
+!**/src/test/**application.yml
+!**/src/main/**application.yml
+!**/src/main/**application.properties
+
+build.gradle
 
 
 ### STS ###
@@ -16,12 +20,19 @@ build/
 .springBeans
 .sts4-cache
 
+
+
+
 ### IntelliJ IDEA ###
 .idea
 *.iws
 *.iml
 *.ipr
+*.gz
+*.log
 out/
+
+
 
 ### NetBeans ###
 /nbproject/private/
@@ -32,24 +43,6 @@ out/
 
 ### VS Code ###
 .vscode/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
-.vscode/
-src/main/java/com/example/demo/hospital/controller/
-src/main/java/com/example/demo/hospital/dao/
-src/main/java/com/example/demo/hospital/service/
-src/main/resources/static/
+!/.gitignore
+lib/
+templates/static/app/

@@ -1,19 +1,105 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml" xmlns:sec="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="UTF-8">
-    <title>메인</title>
-</head>
-<body>
-<h1>메인 페이지</h1>
-<hr>
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:sec="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+    <head th:replace="fragments/config :: configFragment" />
 
-<a sec:authorize="isAnonymous()" th:href="@{/member/login}">로그인</a>
+    <body>
+        <header th:replace="fragments/header :: headerFragment"></header>
 
-<a sec:authorize="isAuthenticated()" th:href="@{/member/logout}">로그아웃</a>
-<a sec:authorize="isAnonymous()" th:href="@{/member/new}">회원가입</a>
-<a sec:authorize="hasRole('ROLE_MEMBER')" th:href="@{/member/info}">내정보 보기</a>
-<a sec:authorize="hasRole('ROLE_ADMIN')" th:href="@{/member/Info}">내정보 보기</a>
-<a sec:authorize="hasRole('ROLE_ADMIN')" th:href="@{/member/members}">사용자 정보 조회</a>
-</body>
+        <!-- banner part start-->
+        <section class="banner_part">
+            <div class="container">
+                <div class="row align-content-center">
+                    <div class="col-lg-7 col-xl-6">
+                        <div class="banner_text">
+                            <h5>The Best Gift For Your Pets</h5></br>
+                            <h2>구해독의 <u>빅데이터</u>로 제공하는</br>
+                                정확도 높은 <u>인공지능</u></br> 질병 진단 서비스를 만나보세요.</h2></br><br>
+                            <a sec:authorize="hasRole('ROLE_MEMBER')"  th:href="@{/member/disease/chart}" class="btn_1">질병 진단 서비스 바로가기</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- banner part start-->
+
+        <!-- about part start-->
+        <section sec:authorize="hasRole('ROLE_MEMBER')" class="about_part section_padding">
+            <div class="container">
+                <div class="row align-items-center justify-content-between">
+           x         <div class="col-md-6">
+                        <div class="about_img">
+                            <img src="../static/leopet/img/about.png" alt="">
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="about_text">
+                            <img src="../static/leopet/img/about_icon.png" class="about_icon" alt="">
+                            <h2>당신의 소중한 반려견, 지켜드립니다.</h2>
+                            <p><h5>반려동물 1000만시대, 반려동물 등록 현황이 매년 증가하는 추세로, 2018 서울시 서베이 결과에 의하면
+                            반려동물로 강아지를 키우는 가구가 84.9%라고 합니다.</h5></p><br/>
+                            <p><h5>이렇듯 반려견은 동반자이자 가족이며 그 이상의 의미를
+                            지니고 있습니다.</h5></p><br/>
+                            <p><h5>저희 구해독은 당신의 소중한 반려견들을 지켜드리는데 조금이나마 힘을 보태고자
+                            탄생했습니다.</h5></p><br/>
+                            <button class="btn_1" onclick="fnMove()">Contact Us</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- about part start-->
+
+        <!-- service part start-->
+        <section sec:authorize="hasRole('ROLE_MEMBER')" class="service_part section_padding services_bg">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="section_tittle text-center">
+                            <img src="../static/leopet/img/about_icon.png" alt="">
+                            <h2>We Provide Best Services</h2>
+                            <p>구해독에서는 아래와 같은 서비스를 제공하고 있습니다.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-4 col-sm-6">
+                        <div class="single_service_part">
+                            <img src="../static/leopet/img/single_service_1.png" alt="#">
+                            <h3>질병 진단 서비스</h3>
+                            <p>구해독은 빅데이터를 이용한 인공지능 학습 모델을 통해 정확도 높은 질병 진단 결과를 보여줍니다. 반려견의
+                            증상을 입력한 후 '진단하기' 버튼만 누르면 여러분의 소중한 반려견이 어디가 아픈지 알아낼 수 있습니다. </p>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6">
+                        <div class="single_service_part">
+                            <img src="../static/leopet/img/single_service_2.png" alt="#">
+                            <h3>똑똑한 병원 추천</h3>
+                            <p>구해독은 질병 진단 결과가 나오면 당신의 위치에서 가장 가까운 동물 병원들이 어디에 있는지 보여줍니다. 이러한
+                            구해독의 똑똑한 병원 추천 서비스를 통해 여러분은 어느 병원을 방문할 것인지 쉽게 결정할 수 있습니다.</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6">
+                        <div class="single_service_part">
+                            <img src="../static/leopet/img/single_service_3.png" alt="#">
+                            <h3>누구나 쉬운 병원 예약</h3>
+                            <p>구해독은 병원 추천 뿐만 아니라 병원 예약 서비스도 제공합니다. 직관적인 UI/UX를 통해
+                            남녀노소 누구나 쉽게 병원 예약이 가능합니다. </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- service part end-->
+
+        <!-- contact-us event -->
+        <script>
+            function fnMove(){
+                let offset = $("#contactus").offset();
+                $('html, body').animate({scrollTop : offset.top}, 700);
+            }
+        </script>
+
+        <!-- contact-us event end -->
+        <footer th:replace="fragments/footer :: footerFragment"></footer>
+    </body>
 </html>

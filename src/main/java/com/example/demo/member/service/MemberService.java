@@ -1,18 +1,18 @@
 package com.example.demo.member.service;
 
-import com.example.demo.member.dao.MemberRepository;
-import com.example.demo.member.vo.Member;
-import com.example.demo.member.dao.MemberSaveRequestDto;
-import com.example.demo.member.dao.MemberUpdateRequestDto;
+import com.example.demo.config.security.Role;
+import com.example.demo.diagnosis.domain.Diagnosis;
+import com.example.demo.diagnosis.repository.DiagnosisRepository;
+import com.example.demo.diagnosis.service.DiagnosisService;
+import com.example.demo.hospital.service.HospitalService;
+import com.example.demo.member.domain.Member;
+import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.member.dto.*;
 
-
-import com.example.demo.member.vo.MemberResponseDto;
-import com.example.demo.member.vo.Role;
-
-import org.slf4j.LoggerFactory;
+import com.example.demo.reserve.service.ReserveService;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 
-import org.slf4j.Logger;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -23,96 +23,157 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
-
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MemberService implements UserDetailsService {
 
+    private final DiagnosisRepository diagnosisRepository;
     private final MemberRepository memberRepository;
-    private Logger logger = LoggerFactory.getLogger(MemberService.class);
+    private final DiagnosisService diagnosisService;
+    private final ReserveService reserveService;
+    private final HospitalService hospitalService;
 
-
-    //회원가입 아이디 중복체크
+    // 회원가입 아이디 중복체크
     @Transactional
-    public void validateDuplicateMember(Member member) {
-        Member findMember = memberRepository.findEmailCheck(member.getEmail());
-        if (findMember!=null) {
-            throw new IllegalStateException("회원가입된 사람입니다.");
+    public int validateDuplicateMember(String user_email) {
+        String value = user_email;
+        value = value.substring(1,value.length()-1);
+        HashMap<String, String> hashMap = new HashMap<>();
+
+        String[] entry = value.split(":");
+
+        hashMap.put(entry[0].trim(), entry[1].trim());
+
+        String value2 = hashMap.values().toString().substring(2, hashMap.values().toString().length()-2);
+
+
+        Member findMember = memberRepository.findEmailCheck(value2);
+        System.out.println("findMember확인 = " + findMember);
+        if (findMember != null) {
+            return 1;
+        } else {
+            return 0;
         }
     }
 
+    // 회원가입
     @Transactional
-    public List<Member> findMembers(){
-        return memberRepository.findAll();
+    public Long SignUp(MemberSaveRequestDto memberDto) {
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        memberDto.SHA256_PassWord(passwordEncoder.encode(memberDto.getPassword()));
+
+        if(memberDto.getRole() == Role.GUEST) {
+            memberDto.GIVE_Role(Role.GUEST);
+        } else if(memberDto.getRole() == Role.VET) {
+            memberDto.GIVE_Role(Role.VET);
+        }
+
+        return memberRepository.save(memberDto.toEntity()).getId();
     }
 
+    // 회원 조회
+    @Transactional(readOnly = true)
+    public Member findMember(Object id){
+        if(id instanceof Long) {
+            return memberRepository.findById((Long) id)
+                    .orElseThrow(() -> new IllegalArgumentException("해당 회원이 없습니다. id=" + id));
+        }
+        else {
+            Member member = memberRepository.findEmailCheck((String) id);
+            return member;
+        }
 
-    //회원가입
-    @Transactional
-    public Long SingUp(MemberSaveRequestDto memberDto) {
-        validateDuplicateMember(memberDto.toEntity());
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        memberDto.setPassword(passwordEncoder.encode(memberDto.getPassword()));
-        memberDto.setRole(Role.ADMIN);
-        return memberRepository.save(memberDto.toEntity()).getId();
     }
 
     @Override
     public UserDetails loadUserByUsername(String userEmail) throws UsernameNotFoundException {
-        Member userEntityWrapper = memberRepository.findEmailCheck(userEmail); //이메일값 반환
-        logger.info("여기까지?");
-        logger.info(userEntityWrapper.getEmail());
-        logger.info(userEntityWrapper.getRole().getValue());
-        logger.info(userEntityWrapper.getPassword());
-        if(userEntityWrapper == null ){
+        Member userEntityWrapper = memberRepository.findEmailCheck(userEmail);
+
+        if(userEntityWrapper == null ) {
             throw new UsernameNotFoundException("User not authorized.");
         }
 
         GrantedAuthority authority = new SimpleGrantedAuthority(userEntityWrapper.getRole().getValue());
         UserDetails userDetails = (UserDetails)new User(userEntityWrapper.getEmail(),
                 userEntityWrapper.getPassword(), Arrays.asList(authority));
-        logger.info(userDetails.getPassword());
+
         return userDetails;
     }
 
+    // 회원 정보수정
     @Transactional
     public Long update(Long id, MemberUpdateRequestDto requestDto) {
         Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 없습니다. id=" + id));
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원이 없습니다. id=" + id));
+        member.update(requestDto.getCity(), requestDto.getStreet(), requestDto.getZipcode(), requestDto.getPhone());
 
-        member.update(requestDto.getName(),requestDto.getEmail(), requestDto.getPassword(),requestDto.getBirth(),requestDto.getPhone());
+        return id;
+    }
+
+    // 회원 패스워드 수정
+    @Transactional
+    public Long updatePwd(Long id, MemberUpdatePwd requestDto) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원이 없습니다. id=" + id));
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+        String encodePwd = passwordEncoder.encode(requestDto.getPassword());
+        member.updatePwd(encodePwd);
+
+        return id;
+    }
+
+    // 관리자, 회원 정보수정
+    @Transactional
+    public Long updateMember(Long id, MemberUpdateRequestDto requestDto) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원이 없습니다. id=" + id));
+
+        member.updateMember(requestDto.getName(), requestDto.getCity(), requestDto.getStreet(), requestDto.getZipcode(), requestDto.getPhone());
 
         return id;
     }
 
 
-    //수정을 위한 서비스
+    // 정보수정
     @Transactional(readOnly = true)
     public MemberResponseDto findById(Long id) {
         Member entity = memberRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 없습니다. id=" + id));
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원/수의사/관리자가 없습니다. id=" + id));
 
         return new MemberResponseDto(entity);
     }
 
+    // 삭제 API
+    @Transactional
+    public void  delete(Long id) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원/수의사/관리자가 없습니다. id=" + id));
+        if(member.getHospital() != null) { //수의사인데 병원을 가지고있는경우
+            hospitalService.deleteHospital(member.getHospital().getId()); //예약정보 전부삭제
+            memberRepository.delete(member);
+        }
+        else if(member.getHospital() == null) {                             // 수의사인데 병원이 없거나, 일반 사용자일경우
+            reserveService.delete_member(member);
+            List<Diagnosis> diagnosis = diagnosisRepository.findAllDesc(member);
+            diagnosisService.delete(diagnosis);
+            memberRepository.delete(member);
+        }
 
+    }
 
-    //
-//
-//    //아이디찾기
-//    @Transactional(readOnly =  true)
-//    public List<Member> findMembers() {
-//        return memberRepository.findAll();
-//    }
-//
-    @Transactional(readOnly =  true)
-    public Member findOne(Long memberId) {
-        return memberRepository.findOne(memberId);
+    @Transactional(readOnly = true)
+    public List<MemberResponseDto> findAllDesc() {
+        return memberRepository.findAllDesc().stream()
+                .map(MemberResponseDto::new)
+                .collect(Collectors.toList());
     }
 
 }
+

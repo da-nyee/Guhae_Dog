@@ -1,63 +1,68 @@
 package com.example.demo.member.controller;
 
-
-import com.example.demo.member.dao.MemberRepository;
-import com.example.demo.member.dao.MemberSaveRequestDto;
-import com.example.demo.member.dao.MemberUpdateRequestDto;
+import com.example.demo.config.auth.LoginUser;
+import com.example.demo.member.dto.MemberUpdatePwd;
+import com.example.demo.member.dto.MemberUpdateRequestDto;
 import com.example.demo.member.service.MemberService;
-import com.example.demo.overlap.Address;
-import lombok.AllArgsConstructor;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Controller;
-import org.springframework.validation.BindingResult;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
-
-@Controller
-@AllArgsConstructor
+@RestController
+@RequiredArgsConstructor
 @Slf4j
 public class MemberApiController {
 
-    MemberService memberService;
+    private final FindByIndexNameSessionRepository sessionRepository;
+    private final  MemberService memberService;
 
-    MemberRepository memberRepository;
+    // 회원이 직접 정보를 수정하는 API
+    @PutMapping("/api/member/settings/{id}")
+    public Long updateForm(@PathVariable Long id, @RequestBody MemberUpdateRequestDto requestDto) {
+        return memberService.update(id, requestDto);
+    }
 
-    HttpSession session;
-
-    //회원가입 등록 API
-    @PostMapping(value = "/api/member/new")
-    public String create(@Valid MemberForm form, BindingResult result) {
-        if (result.hasErrors()) {
-            return "members/createMemberForm";
+    // 회원 패스워드 변경 전용 API
+    @PutMapping("/api/member/settingsPwd/{id}")
+    public Long updatePwd(@PathVariable Long id, @RequestBody MemberUpdatePwd requestDto) {
+        if(!requestDto.getPassword().equals(requestDto.getPassword2())) {
+            throw new IllegalStateException("패스워드 확인 바랍니다.");
+        }
+        else if(requestDto.getPassword2().isEmpty()){
+            throw new IllegalStateException("패스워드 확인 바랍니다.");
         }
 
-        log.info(form.getEmail());
-        Address address = new Address(form.getCity(), form.getStreet(),
-                form.getZipcode());
-        MemberSaveRequestDto member = new MemberSaveRequestDto();
-        member.setName(form.getName());
-        member.setAddress(address);
-        member.setBirth(form.getBirth());
-        member.setEmail(form.getEmail());
-        member.setPassword(form.getPassword());
-        member.setPhone(form.getPhone());
-        memberService.SingUp(member);
-        return "members/login";
+        return memberService.updatePwd(id, requestDto);
     }
 
-    //회원정보 수정 api
-    @PutMapping("/api/member/update/{id}")
-    public Long updateForm(@PathVariable Long id, @RequestBody MemberUpdateRequestDto requestDto) {
+    // 회원이 직접 정보를 삭제하는 api
+    @DeleteMapping("/api/member/delete/{id}")
+    public Long delete(@PathVariable Long id, @LoginUser User user) {
+        sessionRepository.findByIndexNameAndIndexValue(FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME,
+                user.getUsername()).keySet().forEach(session -> sessionRepository.deleteById((String) session));
 
-        return memberService.update(id, requestDto);
-
+        memberService.delete(id); // 회원 정보 삭제 (회원이 만약 병원 관리자라면?)
+        return id;
     }
 
+    // 관리자가 회원정보를 수정하는 API
+    @PutMapping("/api/admin/member/settings/{id}")
+    public Long updateMember(@PathVariable Long id, @RequestBody MemberUpdateRequestDto requestDto) {
+        return memberService.updateMember(id, requestDto);
+    }
+
+    // 관리자가 회원정보를 삭제하는 api
+    @DeleteMapping("/api/admin/member/delete/{id}")
+    public Long deleteMember(@PathVariable Long id) {
+        memberService.delete(id);
+        return id;
+    }
+
+    @PostMapping("/api/checkEmail")
+    public int checkEmail(@RequestBody String user_email) {
+        return memberService.validateDuplicateMember(user_email);
+    }
 }
-
-
-
-
-
